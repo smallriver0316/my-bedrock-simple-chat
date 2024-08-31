@@ -1,4 +1,4 @@
-FROM python:3.12.5-slim AS builder
+FROM python:3.12.5-slim-bullseye AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN pip install -U pip && \
     pipenv sync --system && \
     pip uninstall --yes pipenv
 
-FROM python:3.12.5-slim AS production
+FROM python:3.12.5-slim-bullseye AS production
 
 WORKDIR /app
 
