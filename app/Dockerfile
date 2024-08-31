@@ -1,10 +1,20 @@
-FROM python:3.12.5-slim-bookworm
+FROM python:3.12.5-slim AS builder
 
 WORKDIR /app
-RUN pip install pipenv
 
 COPY Pipfile* .
 COPY run.py .
-RUN pipenv install
+RUN pip install -U pip && \
+    pip install pipenv==2024.0.1 && \
+    pipenv sync --system && \
+    pip uninstall --yes pipenv
 
-CMD ["pipenv", "run", "streamlit", "run", "run.py"]
+FROM python:3.12.5-slim AS production
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages/
+COPY --from=builder /usr/local/bin/streamlit /usr/local/bin/streamlit
+COPY --from=builder /app /app/
+
+CMD ["streamlit", "run", "run.py"]
