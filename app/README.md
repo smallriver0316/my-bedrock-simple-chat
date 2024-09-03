@@ -39,6 +39,10 @@ streamlit run run.py
 ```bash
 # build
 docker build -t simple-br-app-image .
-# run
-docker run -p 8501:8501 simple-br-app-image
+# run (on local PC)
+docker run -p 8501:8501 \
+           -e AWS_ACCESS_KEY_ID=<your_access_key_id> \
+           -e AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
+           -e AWS_DEFAULT_REGION=<your_region>
+           simple-br-app-image
 ```
