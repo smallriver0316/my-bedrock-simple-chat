@@ -26,7 +26,7 @@ Note:
 It is necessary to setup your AWS environment and deploy DynamoDB table before running this script.
 
 ```bash
-streamlit run run.py
+TABLE_NAME=<your_dynamodb_table_name> streamlit run run.py
 
   You can now view your Streamlit app in your browser.
 
@@ -44,5 +44,6 @@ docker run -p 8501:8501 \
            -e AWS_ACCESS_KEY_ID=<your_access_key_id> \
            -e AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
            -e AWS_DEFAULT_REGION=<your_region>
+           -e TABLE_NAME=<your_dynamodb_table_name>
            simple-br-app-image
 ```

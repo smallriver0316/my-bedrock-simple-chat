@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from langchain_aws import ChatBedrock
 from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
@@ -10,8 +11,10 @@ if "session_id" not in st.session_state:
 
 # define chat history
 if "history" not in st.session_state:
+    table_name = os.environ.get("TABLE_NAME")
+    assert table_name is not None, "You must specify DynamoDB table"
     st.session_state.history = DynamoDBChatMessageHistory(
-      table_name="MyBedrockSimpleChat_Table_dev",
+      table_name=table_name,
       session_id=st.session_state.session_id,
       primary_key_name="UserId",
       key={"UserId": "test_user", "SessionId": st.session_state.session_id},
