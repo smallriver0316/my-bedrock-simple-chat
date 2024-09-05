@@ -13,11 +13,14 @@ pipenv, version 2024.0.1
 ## How to setup
 
 ```bash
+# launch virtual env
+pipenv shell
+
 # install packages
 pipenv install
 
-# launch virtual env
-pipenv shell
+# (close virtual env)
+deactivate
 ```
 
 ## How to run on local env
