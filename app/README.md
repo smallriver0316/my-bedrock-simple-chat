@@ -50,3 +50,18 @@ docker run -p 8501:8501 \
            -e TABLE_NAME=<your_dynamodb_table_name>
            simple-br-app-image
 ```
+
+## How to upload image to ECR
+
+Create ECR repository.
+You can confirm push command on AWS console like below.
+
+```bash
+aws ecr get-login-password --region <your region> | docker login --username AWS --password-stdin <your account>.dkr.ecr.<your region>.amazonaws.com
+
+docker build -t <your repository name> .
+
+docker tag <your repository name>:latest 449395013922.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
+
+docker push <your account>.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
+```
