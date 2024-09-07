@@ -10,6 +10,7 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
     super(scope, id, props);
 
     const stage = this.node.tryGetContext('stage') || 'dev';
+    const myIp = this.node.tryGetContext('myIp');
 
     // DynamoDB
     const table = new dynamodb.TableV2(this, `Table-${stage}`, {
@@ -62,9 +63,16 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       service: ec2.InterfaceVpcEndpointAwsService.BEDROCK_RUNTIME,
       subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
     });
-    // example resource
-    // const queue = new sqs.Queue(this, 'MyBedrockSimpleChatQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+
+    // security group for ALB
+    const sg = new ec2.SecurityGroup(this, `SecurityGroup-${stage}`, {
+      vpc,
+      description: "Security group for ALB",
+      allowAllOutbound: true,
+    });
+    sg.addIngressRule(
+      myIp === undefined ? ec2.Peer.anyIpv4() : ec2.Peer.ipv4(myIp),
+      ec2.Port.HTTP
+    );
   }
 }
