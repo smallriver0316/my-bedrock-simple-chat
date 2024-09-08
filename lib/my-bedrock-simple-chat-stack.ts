@@ -2,8 +2,11 @@ import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { assert } from 'console';
 
 export class MyBedrockSimpleChatStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -11,6 +14,8 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
 
     const stage = this.node.tryGetContext('stage') || 'dev';
     const myIp = this.node.tryGetContext('myIp');
+    const imageTag = this.node.tryGetContext('imageTag');
+    assert(imageTag, "You must specify imageTag in ECR");
 
     // DynamoDB
     const table = new dynamodb.TableV2(this, `Table-${stage}`, {
@@ -74,5 +79,74 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       myIp === undefined ? ec2.Peer.anyIpv4() : ec2.Peer.ipv4(myIp),
       ec2.Port.HTTP
     );
+
+    // ALB
+    const lb = new elbv2.ApplicationLoadBalancer(this, `ALB-${stage}`, {
+      vpc,
+      internetFacing: true,
+      securityGroup: sg,
+    });
+
+    const listener = lb.addListener(`AlbListener-${stage}`, {
+      port: 8501,
+      open: true,
+    });
+
+    const targetGroup = new elbv2.ApplicationTargetGroup(this, `TargetGroup-${stage}`, {
+      vpc,
+      port: 8501,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      targetType: elbv2.TargetType.IP,
+      healthCheck: {
+        path: '/',
+        healthyHttpCodes: '200',
+      }
+    });
+
+    listener.addTargetGroups(`AlbTarget-${stage}`, {
+      targetGroups: [targetGroup],
+    });
+
+    // IAM Role
+    const taskRole = new iam.Role(this, `TaskRole-${stage}`, {
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    });
+    taskRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'dynamodb:BatchGetItem',
+        'dynamodb:BatchWriteItem',
+        'dynamodb:ConditionCheckItem',
+        'dynamodb:PutItem',
+        'dynamodb:DescribeTable',
+        'dynamodb:GetItem',
+        'dynamodb:Scan',
+        'dynamodb:Query',
+        'dynamodb:UpdateItem',
+      ],
+      resources: [ table.tableArn ],
+    }));
+    taskRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'bedrock:*'
+      ],
+      resources: ['*'],
+    }));
+
+    // ECS/Fargate
+    new ecs_patterns.ApplicationLoadBalancedFargateService(this, `FargateService-${stage}`, {
+      vpc,
+      memoryLimitMiB: 1024,
+      cpu: 512,
+      taskImageOptions: {
+        image: ecs.ContainerImage.fromEcrRepository(imageTag),
+        containerName: 'my-bdr-simple-app',
+        containerPort: 8501,
+        environment: {
+          'TABLE_NAME': table.tableName,
+        },
+        taskRole,
+      },
+      loadBalancer: lb,
+    });
   }
 }
