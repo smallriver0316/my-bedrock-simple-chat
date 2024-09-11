@@ -29,7 +29,7 @@ Note:
 It is necessary to setup your AWS environment and deploy DynamoDB table before running this script.
 
 ```bash
-TABLE_NAME=<your_dynamodb_table_name> streamlit run run.py
+TABLE_NAME=<your_dynamodb_table_name> MODEL=<your Bedrock model ID> streamlit run run.py
 
   You can now view your Streamlit app in your browser.
 
@@ -48,6 +48,7 @@ docker run -p 8501:8501 \
            -e AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
            -e AWS_DEFAULT_REGION=<your_region>
            -e TABLE_NAME=<your_dynamodb_table_name>
+           -e MODEL=<your Bedrock model ID>
            simple-br-app-image
 ```
 

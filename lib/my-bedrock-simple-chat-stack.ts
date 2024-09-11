@@ -5,6 +5,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import { Construct } from 'constructs';
 import { assert } from 'console';
 
@@ -14,8 +15,11 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
 
     const stage = this.node.tryGetContext('stage') || 'dev';
     const myIp = this.node.tryGetContext('myIp');
-    const imageTag = this.node.tryGetContext('imageTag');
-    assert(imageTag, "You must specify imageTag in ECR");
+    const repoName = this.node.tryGetContext('repositoryName');
+    assert(repoName, 'You must specify ECR repository name!');
+    const imageTag = this.node.tryGetContext('imageTag') || 'latest';
+    const modelId = this.node.tryGetContext('modelId')
+    assert(modelId, 'You must specify Bedrock model ID');
 
     // DynamoDB
     const table = new dynamodb.TableV2(this, `Table-${stage}`, {
@@ -88,7 +92,7 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
     });
 
     const listener = lb.addListener(`AlbListener-${stage}`, {
-      port: 8501,
+      port: 80,
       open: true,
     });
 
@@ -132,21 +136,26 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+
     // ECS/Fargate
+    const repository = new ecr.Repository(this, repoName);
+
     new ecs_patterns.ApplicationLoadBalancedFargateService(this, `FargateService-${stage}`, {
       vpc,
       memoryLimitMiB: 1024,
       cpu: 512,
       taskImageOptions: {
-        image: ecs.ContainerImage.fromEcrRepository(imageTag),
+        image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
         containerName: 'my-bdr-simple-app',
         containerPort: 8501,
         environment: {
           'TABLE_NAME': table.tableName,
+          'MODEL': modelId,
         },
         taskRole,
       },
       loadBalancer: lb,
+      publicLoadBalancer: true,
     });
   }
 }
