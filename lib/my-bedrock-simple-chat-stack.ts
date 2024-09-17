@@ -4,7 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
+// import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import { Construct } from 'constructs';
 import { assert } from 'console';
@@ -74,21 +74,27 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
     });
 
     // security group for ALB
-    const sg = new ec2.SecurityGroup(this, `SecurityGroup-${stage}`, {
+    const sgForAlb = new ec2.SecurityGroup(this, `AlbSecurityGroup-${stage}`, {
       vpc,
       description: "Security group for ALB",
-      allowAllOutbound: true,
     });
-    sg.addIngressRule(
+    sgForAlb.addIngressRule(
       myIp === undefined ? ec2.Peer.anyIpv4() : ec2.Peer.ipv4(myIp),
       ec2.Port.HTTP
     );
+
+    const sgForApp = new ec2.SecurityGroup(this, `AppSecurityGroup-${stage}`, {
+      vpc,
+      description: "Security group for Fargate instance",
+      allowAllOutbound: true,
+    });
+    sgForApp.connections.allowFrom(sgForAlb, ec2.Port.tcp(80), 'Allow ALB access');
 
     // ALB
     const lb = new elbv2.ApplicationLoadBalancer(this, `ALB-${stage}`, {
       vpc,
       internetFacing: true,
-      securityGroup: sg,
+      securityGroup: sgForAlb,
     });
 
     const listener = lb.addListener(`AlbListener-${stage}`, {
@@ -137,25 +143,59 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
     }));
 
 
-    // ECS/Fargate
-    const repository = new ecr.Repository(this, repoName);
+    // ECS
 
-    new ecs_patterns.ApplicationLoadBalancedFargateService(this, `FargateService-${stage}`, {
-      vpc,
+    // cluster
+    const cluster = new ecs.Cluster(this, `Cluster-${stage}`, {
+      vpc
+    });
+
+    // task definition
+    const taskDef = new ecs.FargateTaskDefinition(this, `TaskDef-${stage}`, {
       memoryLimitMiB: 1024,
       cpu: 512,
-      taskImageOptions: {
-        image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
-        containerName: 'my-bdr-simple-app',
-        containerPort: 8501,
-        environment: {
-          'TABLE_NAME': table.tableName,
-          'MODEL': modelId,
-        },
-        taskRole,
-      },
-      loadBalancer: lb,
-      publicLoadBalancer: true,
+      taskRole,
     });
+
+    const repository = new ecr.Repository(this, repoName);
+
+    const container = taskDef.addContainer(`Container-${stage}`, {
+      image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
+      containerName: 'my-bdr-simple-app',
+      environment: {
+        'TABLE_NAME': table.tableName,
+        'MODEL': modelId,
+      },
+    });
+    container.addPortMappings({
+      containerPort: 8501,
+      hostPort: 8501,
+    });
+
+    const service = new ecs.FargateService(this, `Service-${stage}`, {
+      cluster,
+      taskDefinition: taskDef,
+      desiredCount: 1,
+      assignPublicIp: false,
+      securityGroups: [sgForApp]
+    });
+    service.attachToApplicationTargetGroup(targetGroup);
+    // new ecs_patterns.ApplicationLoadBalancedFargateService(this, `FargateService-${stage}`, {
+    //   vpc,
+    //   memoryLimitMiB: 1024,
+    //   cpu: 512,
+    //   taskImageOptions: {
+    //     image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
+    //     containerName: 'my-bdr-simple-app',
+    //     containerPort: 8501,
+    //     environment: {
+    //       'TABLE_NAME': table.tableName,
+    //       'MODEL': modelId,
+    //     },
+    //     taskRole,
+    //   },
+    //   loadBalancer: lb,
+    //   publicLoadBalancer: true,
+    // });
   }
 }
