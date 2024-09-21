@@ -147,7 +147,6 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       resources: ['*'],
     }));
 
-
     // ECS
 
     // cluster
@@ -185,22 +184,5 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       securityGroups: [sgForApp]
     });
     service.attachToApplicationTargetGroup(targetGroup);
-    // new ecs_patterns.ApplicationLoadBalancedFargateService(this, `FargateService-${stage}`, {
-    //   vpc,
-    //   memoryLimitMiB: 1024,
-    //   cpu: 512,
-    //   taskImageOptions: {
-    //     image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
-    //     containerName: 'my-bdr-simple-app',
-    //     containerPort: 8501,
-    //     environment: {
-    //       'TABLE_NAME': table.tableName,
-    //       'MODEL': modelId,
-    //     },
-    //     taskRole,
-    //   },
-    //   loadBalancer: lb,
-    //   publicLoadBalancer: true,
-    // });
   }
 }
