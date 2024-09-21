@@ -30,8 +30,10 @@ if "chat" not in st.session_state:
       ]
     )
 
+    model = os.environ.get("MODEL")
+    assert model is not None, "You must specify Bedrock model ID"
     chat = ChatBedrock(
-        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        model_id=model,
         model_kwargs={"max_tokens": 4000},
         streaming=True,
     )

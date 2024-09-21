@@ -29,7 +29,7 @@ Note:
 It is necessary to setup your AWS environment and deploy DynamoDB table before running this script.
 
 ```bash
-TABLE_NAME=<your_dynamodb_table_name> streamlit run run.py
+TABLE_NAME=<your_dynamodb_table_name> MODEL=<your Bedrock model ID> streamlit run run.py
 
   You can now view your Streamlit app in your browser.
 
@@ -48,5 +48,21 @@ docker run -p 8501:8501 \
            -e AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
            -e AWS_DEFAULT_REGION=<your_region>
            -e TABLE_NAME=<your_dynamodb_table_name>
+           -e MODEL=<your Bedrock model ID>
            simple-br-app-image
+```
+
+## How to upload image to ECR
+
+Create ECR repository.
+You can confirm push command on AWS console like below.
+
+```bash
+aws ecr get-login-password --region <your region> | docker login --username AWS --password-stdin <your account>.dkr.ecr.<your region>.amazonaws.com
+
+docker build -t <your repository name> .
+
+docker tag <your repository name>:latest 449395013922.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
+
+docker push <your account>.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
 ```
