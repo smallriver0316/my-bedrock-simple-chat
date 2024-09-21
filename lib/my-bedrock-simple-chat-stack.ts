@@ -58,6 +58,11 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
     });
 
+    vpc.addGatewayEndpoint(`S3Endpoint-${stage}`, {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+      subnets: [{ subnetType: ec2.SubnetType.PRIVATE_ISOLATED }],
+    });
+
     vpc.addInterfaceEndpoint(`EcrDockerEndpoint-${stage}`, {
       service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
       subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
@@ -157,7 +162,7 @@ export class MyBedrockSimpleChatStack extends cdk.Stack {
       taskRole,
     });
 
-    const repository = new ecr.Repository(this, repoName);
+    const repository = ecr.Repository.fromRepositoryName(this, `Repository-${stage}`, repoName);
 
     const container = taskDef.addContainer(`Container-${stage}`, {
       image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
