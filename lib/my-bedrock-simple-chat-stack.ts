@@ -4,7 +4,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-// import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import { Construct } from 'constructs';
 import { assert } from 'console';

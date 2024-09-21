@@ -21,10 +21,10 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ```bash
 $ node -v
-v20.8.0
+v22.7.0
 
 $ cdk --version
-2.100.0
+2.159.1
 
 $ npm install
 ```
