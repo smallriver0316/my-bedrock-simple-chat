@@ -34,7 +34,7 @@ TABLE_NAME=<your_dynamodb_table_name> MODEL=<your Bedrock model ID> streamlit ru
   You can now view your Streamlit app in your browser.
 
   Local URL: http://localhost:8501
-  Network URL: http://172.19.90.73:8501
+  Network URL: http://xxx.xx.xx.xx:8501
 ```
 
 ## How to run on docker container
@@ -62,7 +62,7 @@ aws ecr get-login-password --region <your region> | docker login --username AWS 
 
 docker build -t <your repository name> .
 
-docker tag <your repository name>:latest 449395013922.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
+docker tag <your repository name>:latest <your account>.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
 
 docker push <your account>.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
 ```

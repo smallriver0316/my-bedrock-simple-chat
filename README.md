@@ -1,6 +1,6 @@
 # my-bedrock-simple-chat
 
-Chat interface powered by bedrock
+Chat application powered by bedrock inspired by <https://qiita.com/minorun365/items/84bef6f06e450a310a6a>.
 
 ## This is CDK TypeScript project
 
@@ -31,7 +31,35 @@ $ npm install
 
 ## How to deploy
 
-Create ECR repository before deploying app.
+### Enable a LLM model in Bedrock
+
+Login AWS console and open Bedrock console.
+
+Make a model you want to use enabled and keep the model ID.
+
+### Upload container image to ECR
+
+Open AWS ECR console and create a repository.
+
+Build a docker image of application and upload it to the repository as following.
+
+```bash
+cd app
+# build app image
+docker build -t simple-br-app-image .
+
+# upload the image to ECR
+## These commands can be seen on your repository page in ECR console.
+aws ecr get-login-password --region <your region> | docker login --username AWS --password-stdin <your account>.dkr.ecr.<your region>.amazonaws.com
+
+docker build -t <your repository name> .
+
+docker tag <your repository name>:latest <your account>.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
+
+docker push <your account>.dkr.ecr.<your region>.amazonaws.com/<your repository name>:latest
+```
+
+### Deploy infrastructure
 
 ```bash
 # setting environment variables is necessary at every time
